@@ -1,0 +1,56 @@
+#!/bin/bash
+
+usage() {
+  cat 1>&2 <<EOF
+laradock app handler
+USAGE:
+    sh app.sh [-h] run|test|watch
+POSITIONAL ARGUMENTS:
+    run                       docker-compose up nginx mysql phpmyadmin
+    test                      docker-compose exec workspace php artisan test
+    watch                     docker-compose exec workspace npm run watch
+FLAGS:
+    -h, --help                Prints help information
+EOF
+}
+
+die() {
+  err_msg="$1"
+  echo "$err_msg" >&2
+  exit 1
+}
+
+handle() {
+  while test $# -gt 0; do
+    key="$1"
+    case "$key" in
+    run)
+      exec docker-compose up nginx mysql phpmyadmin
+      exit 0
+      ;;
+    test)
+      exec docker-compose exec workspace php artisan test
+      exit 0
+      ;;
+    watch)
+      exec docker-compose exec workspace npm run watch
+      exit 0
+      ;;
+    -h | --help)
+      usage
+      exit 0
+      ;;
+    *)
+      die "Got an unexpected argument: $1"
+      ;;
+    esac
+    shift
+  done
+}
+
+main() {
+  handle "$@"
+  exit 0
+}
+
+main "$@" || exit 1
