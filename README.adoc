@@ -1,4 +1,6 @@
 = Laravel Tutorial
+:toc: left
+:toclevels: 5
 
 * https://laravel-news.com/your-first-laravel-application[Laravel Tutorial: Step by Step Guide to Building Your First Laravel Application]
 
@@ -511,3 +513,168 @@ php artisan test
 * テストの実行
 |1h
 |===
+
+=== ディレクトリ構成
+
+[source,bash]
+----
+$ tree --charset unicode -I "laradock|node_modules|vendor"
+.
+|-- README.adoc
+|-- README.md
+|-- app // <1>
+|   |-- Console
+|   |   `-- Kernel.php
+|   |-- Exceptions
+|   |   `-- Handler.php
+|   |-- Http // <2>
+|   |   |-- Controllers
+|   |   |   |-- Auth
+|   |   |   |   |-- ConfirmPasswordController.php
+|   |   |   |   |-- ForgotPasswordController.php
+|   |   |   |   |-- LoginController.php
+|   |   |   |   |-- RegisterController.php
+|   |   |   |   |-- ResetPasswordController.php
+|   |   |   |   `-- VerificationController.php
+|   |   |   |-- Controller.php
+|   |   |   `-- HomeController.php
+|   |   |-- Kernel.php
+|   |   `-- Middleware
+|   |       |-- Authenticate.php
+|   |       |-- CheckForMaintenanceMode.php
+|   |       |-- EncryptCookies.php
+|   |       |-- RedirectIfAuthenticated.php
+|   |       |-- TrimStrings.php
+|   |       |-- TrustHosts.php
+|   |       |-- TrustProxies.php
+|   |       `-- VerifyCsrfToken.php
+|   |-- Link.php
+|   |-- Providers
+|   |   |-- AppServiceProvider.php
+|   |   |-- AuthServiceProvider.php
+|   |   |-- BroadcastServiceProvider.php
+|   |   |-- EventServiceProvider.php
+|   |   `-- RouteServiceProvider.php
+|   `-- User.php
+|-- app.sh.example
+|-- artisan
+|-- bootstrap
+|   |-- app.php
+|   `-- cache
+|       |-- packages.php
+|       `-- services.php
+|-- composer.json
+|-- composer.lock
+|-- config // <3>
+|   |-- app.php
+|   |-- auth.php
+|   |-- broadcasting.php
+|   |-- cache.php
+|   |-- cors.php
+|   |-- database.php
+|   |-- filesystems.php
+|   |-- hashing.php
+|   |-- logging.php
+|   |-- mail.php
+|   |-- queue.php
+|   |-- services.php
+|   |-- session.php
+|   `-- view.php
+|-- database // <4>
+|   |-- factories
+|   |   |-- LinkFactory.php
+|   |   `-- UserFactory.php
+|   |-- migrations
+|   |   |-- 2014_10_12_000000_create_users_table.php
+|   |   |-- 2014_10_12_100000_create_password_resets_table.php
+|   |   |-- 2019_08_19_000000_create_failed_jobs_table.php
+|   |   `-- 2020_06_24_082747_create_links_table.php
+|   `-- seeds
+|       |-- DatabaseSeeder.php
+|       `-- LinksTableSeeder.php
+|-- package-lock.json
+|-- package.json
+|-- phpunit.xml
+|-- public // <5>
+|   |-- css
+|   |   `-- app.css
+|   |-- favicon.ico
+|   |-- index.php
+|   |-- js
+|   |   `-- app.js
+|   |-- mix-manifest.json
+|   |-- robots.txt
+|   `-- web.config
+|-- resources // <6>
+|   |-- js
+|   |   |-- app.js
+|   |   `-- bootstrap.js
+|   |-- lang
+|   |   `-- en
+|   |       |-- auth.php
+|   |       |-- pagination.php
+|   |       |-- passwords.php
+|   |       `-- validation.php
+|   |-- sass
+|   |   |-- _variables.scss
+|   |   `-- app.scss
+|   `-- views
+|       |-- auth
+|       |   |-- login.blade.php
+|       |   |-- passwords
+|       |   |   |-- confirm.blade.php
+|       |   |   |-- email.blade.php
+|       |   |   `-- reset.blade.php
+|       |   |-- register.blade.php
+|       |   `-- verify.blade.php
+|       |-- home.blade.php
+|       |-- layouts
+|       |   `-- app.blade.php
+|       |-- submit.blade.php
+|       `-- welcome.blade.php
+|-- routes // <7>
+|   |-- api.php // <9>
+|   |-- channels.php
+|   |-- console.php
+|   `-- web.php // <8>
+|-- server.php
+|-- storage // <10>
+|   |-- app
+|   |   `-- public
+|   |-- framework
+|   |   |-- cache
+|   |   |   `-- data
+|   |   |-- sessions
+|   |   |   |-- 4odKW1J4rpdzPaPQzmN5q36hm00bLPZXthTGVnik
+|   |   |   |-- SosLCHV00ngiRCOoEZA9ksOySpgGAVREEYbHAzEa
+|   |   |   `-- xA8GDKciSsZCsmkhSWkhYbECT9Jviz7sAQFsIZXp
+|   |   |-- testing
+|   |   `-- views
+|   |       |-- 6dc4b9091bb228f0c7a3eba910a93be3a76e84ca.php
+|   |       |-- 781b7abdbe9aee2ceb9a178ff1cc449b56d3debb.php
+|   |       |-- 7bdeb8b0c526bafc45b4cf9183b44ebc3b0f0478.php
+|   |       |-- c6d615eb91fe3a0edd449165e94d034703bbb84d.php
+|   |       `-- e7ac274255da24ad5c9a63a3e97c4afea0bdf25f.php
+|   `-- logs
+|       `-- laravel.log
+|-- tests // <11>
+|   |-- CreatesApplication.php
+|   |-- Feature
+|   |   `-- SubmitLinksTest.php
+|   |-- TestCase.php
+|   `-- Unit
+`-- webpack.mix.js
+
+41 directories, 103 files
+----
+<1> app はアプリのコアディレクトリ
+<2> app/Http はコントローラ、ミドルウェア、フォームリクエストを設置する。アプリケーションへのリクエストを処理するロジックは、ほぼ全てこのディレクトリ内に設置する
+<3> config は設定ファイルを格納する
+<4> database はマイグレーション用ファイルやテストデータ用の factory / seeder を格納する
+<5> public はすべてのリクエストのエントリーポイント
+<6> resources はコンパイル前の assets や view(blade) を格納する
+<7> routes はルーティングの定義ファイルを管理
+<8> web.php は RouteServiceProvider の web ミドルウェアグループに属するルートで構成します。もしアプリケーションがステートフルならば、すべてのルートは web.php ファイルの中で定義されることになるでしょう。
+<9> api.php は RouteServiceProvider の api ミドルウェアグループに属するルートで構成します。これらのルートを通るアプリケーションに対するリクエストは、セッションステートにアクセスする必要がないように、トークンを使って認証されることを意図しています。
+<10> storage はコンパイルされたBladeテンプレート、ファイルベースのセッション、ファイルキャッシュなど、フレームワークにより生成されるファイルを保存する
+<11> tests は自動テストを配置
