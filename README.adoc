@@ -393,7 +393,21 @@ function link_is_not_created_with_an_invalid_url()
 
 == memo
 
-.A simple table with a title
+dokcer 向けコマンド::
++
+--
+[source,bash]
+----
+exec docker-compose up nginx mysql phpmyadmin // <1>
+exec docker-compose exec workspace php artisan test // <2>
+exec docker-compose exec workspace npm run watch // <3>
+----
+<1> docker 起動
+<2> テスト実行
+<3> assets の監視起動
+--
+
+.チュートリアルにかかった時間
 [cols="3a,1"]
 |===
 |Column heading 1 |Column heading 2
