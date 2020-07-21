@@ -1,0 +1,435 @@
+= Laravel Tutorial
+
+* https://laravel-news.com/your-first-laravel-application[Laravel Tutorial: Step by Step Guide to Building Your First Laravel Application]
+
+== プロジェクト作成
+
+[source,bash]
+----
+# Via the installer
+laravel new links // <1>
+
+# Via composer
+composer create-project --prefer-dist laravel/laravel links "7.*"
+----
+<1> composer で laravel/installer をインストール済みの場合
+
+
+== データベース初期化
+
+`.env.example` をコピペして `.env` を作り、 DB の接続情報を設定する。
+なお `.env` の中身は本番/検証環境などで異なるため git の管理対象外とするべき。
+
+laradock を使って default と異なるデータベースを作る場合は、 `laradock/mysql/docker-entrypoint-initdb.d/createdb.sql.example` の内容にしたがって `createdb.sql` を作る。
+
+[source,sql]
+.sample
+----
+CREATE DATABASE IF NOT EXISTS `laraveltutorial` COLLATE 'utf8_general_ci' ;
+GRANT ALL ON `laraveltutorial`.* TO 'default'@'%' ;
+
+FLUSH PRIVILEGES ;
+----
+
+NOTE: 初回の `docker-compose up` 前に初期化用ファイルを作成すること。
+
+初回のデータベースへの接続確認は migrate コマンドを使うと良い。
+
+[source,bash]
+----
+php artisan migrate // <1>
+----
+<1> `artisan` は laravel 用のコマンドハンドラ(?)コマンドハブ(?)的なもの
+
+== ユーザー登録/認証の仕組みを自動構築(Scaffolding)
+
+* https://readouble.com/laravel/7.x/ja/authentication.html[Laravel 7.x 認証]
+* https://laravel.com/docs/7.x/frontend[JavaScript & CSS Scaffolding]
+
+次のコマンドを実行することで、ユーザーの登録やログインの仕組みを自動的に構築することができる。
+
+[source,bash]
+----
+composer install laravel/ui
+php artisan ui bootstrap --auth // <1>
+----
+<1> bootstrap 以外にも vue, react も選択できる
+
+== migrate
+
+migrate 用のファイルを生成する。
+
+[source,bash]
+----
+php artisan make:migration create_links_table --create=links // <1>
+----
+<1> `database/migrations/{{datetime}}_create_links_table.php` を生成する。
+
+[source,php]
+.`database/migrations/{{datetime}}_create_links_table.php` 実装例
+----
+public function up()
+{
+    Schema::create('links', function (Blueprint $table) {
+        $table->increments('id');
+        $table->string('title');
+        $table->string('url')->unique();
+        $table->text('description');
+        $table->timestamps();
+    });
+}
+----
+
+migrate を実行する。
+
+[source,bash]
+----
+php artisan migrate
+----
+
+.migrate の方法
+--
+[horizontal]
+`php artisan migrate`:: 通常の migrate 実行
+`php artisan migrate:fresh`:: テーブルをすべてドロップしてから migrate
+`php artisan migrate:fresh --seed`:: テーブルをすべてドロップしてから migrate してテストデータを投入
+--
+
+== model
+
+model 用のファイルを生成する。
+
+[source,bash]
+----
+php artisan make:model --factory Link // <1> <2>
+----
+<1> `app/Link.php` を生成する。
+<2> `--factory` フラグをつけると、テストデータ用の `database/factories/LinkFactory.php` を生成する。
+
+=== アプリ用
+
+モデル(`app/Link.php`)のフィールドを固定するには `$fillable` プロパティを用いる。
+
+[source,php]
+----
+<?php
+
+namespace App;
+
+use Illuminate\Database\Eloquent\Model;
+
+class Link extends Model
+{
+    protected $fillable = [ // <1>
+        'title',
+        'url',
+        'description'
+    ];
+}
+----
+<1> `$fillable` を用いて配列で定義したフィールドのみがコンストラクタで一括割当される。
+
+=== テスト用
+
+[source,php]
+.`database/factories/LinkFactory.php` 実装例
+----
+<?php
+
+/** @var \Illuminate\Database\Eloquent\Factory $factory */
+
+use App\Link;
+use Faker\Generator as Faker;
+
+$factory->define(Link::class, function (Faker $faker) {
+    return [
+        'title' => substr($faker->sentence(2), 0, -1),
+        'url' => $faker->url,
+        'description' => $faker->paragraph,
+    ];
+});
+----
+
+テストデータを生成する seeder ファイルを生成する。
+
+[source,bash]
+----
+php artisan make:seeder LinksTableSeeder // <1>
+----
+<1> `database/seeds/LinksTableSeeder.php` を生成する。
+
+[source,php]
+.`database/seeds/LinksTableSeeder.php` 実装例
+----
+public function run()
+{
+    factory(App\Link::class, 5)->create();
+}
+----
+
+seeder を呼ぶためには `database/seeds/DatabaseSeeder.php` で call する必要がある。
+
+[source,php]
+.`database/seeds/DatabaseSeeder.php` 実装例
+----
+public function run()
+{
+    $this->call(LinksTableSeeder::class);
+}
+----
+
+== controller(Routing)
+
+ルーティングは `routes/web.php` で管理。
+
+[source,php]
+.`routes/web.php` 実装例
+----
+Route::get('/', function () {
+    $links = \App\Link::all(); // <1>
+
+    return view('welcome', ['links' => $links]); // <2> <3>
+    // return view('welcome')->with('links', $links); // <4>
+    // return view('welcome')->withLinks($links); // <4>
+});
+----
+<1> データベースからデータを取得
+<2> 第１引数の welcome でテンプレートファイルを指定。たぶん `resources/views/welcome.blade.php` を参照する
+<3> 第２引数で変数をテンプレートファイルの定義へマッピング
+<4> こんな書き方もできる(fluent API)
+
+POST に対するバリデーションチェックも `routes/web.php` 内で処理(してもよい)。
+
+[source,php]
+.`routes/web.php` 内でのバリデーション実装例
+----
+use Illuminate\Http\Request;
+
+Route::post('/submit', function (Request $request) {
+    $data = $request->validate([ // <1>
+        'title' => 'required|max:255',
+        'url' => 'required|url|max:255',
+        'description' => 'required|max:255',
+    ]);
+
+    $link = tap(new App\Link($data))->save(); // <2> <4>
+
+    // $link = new \App\Link($data); // <3>
+    // $link->save();
+
+    // $link = new \App\Link; // <5>
+    // $link->title = $data['title'];
+    // $link->url = $data['url'];
+    // $link->description = $data['description'];
+    // $link->save();
+
+    return redirect('/');
+});
+----
+<1> バリデーション。不適な場合は例外がスローされ、エラー情報が view 側に渡される(?)
+<2> `tap` ヘルパーを使うとモデルインスタンスが返るため `save()` が呼び出せる
+<3> `tap` ヘルパーを使わない場合の例
+<4> 引数の `$date` は、モデルで `$fillable` で定義したフィールドのみが設定される
+<5> コンストラクタによる一括割当を避けたい場合の例
+
+== view
+
+view は `resources/views/xxx.blade.php` を編集する。
+view の書き方をざっくり説明。
+
+[source,php]
+.`routes/web.php` 実装例
+----
+@extends('layouts.app') // <1>
+@section('content') // <2>
+    <div class="container">
+        <div class="row">
+            <h1>Submit a link</h1>
+        </div>
+        <div class="row">
+            <form action="/submit" method="post">
+                @csrf // <3>
+                @if ($errors->any()) // <4>
+                    <div class="alert alert-danger" role="alert">
+                        Please fix the following errors
+                    </div>
+                @endif
+                <div class="form-group">
+                    <label for="title">Title</label>
+                    <input type="text" class="form-control @error('title') is-invalid @enderror" id="title" name="title" placeholder="Title" value="{{ old('title') }}"> // <5>
+                    @error('title') // <6>
+                        <div class="invalid-feedback">{{ $message }}</div>
+                    @enderror
+                    // @if($errors->has('title')) // <7>
+                    //     <div class="invalid-feedback">{{ $errors->first('title') }}</div>
+                    // @endif
+                </div>
+                <div class="form-group">
+                    <label for="url">Url</label>
+                    <input type="text" class="form-control @error('url') is-invalid @enderror" id="url" name="url" placeholder="URL" value="{{ old('url') }}">
+                    @error('url')
+                        <div class="invalid-feedback">{{ $message }}</div>
+                    @enderror
+                </div>
+                <div class="form-group">
+                    <label for="description">Description</label>
+                    <textarea class="form-control @error('description') is-invalid @enderror" id="description" name="description" placeholder="description">{{ old('description') }}</textarea>
+                    @error('description')
+                        <div class="invalid-feedback">{{ $message }}</div>
+                    @enderror
+                </div>
+                <button type="submit" class="btn btn-primary">Submit</button>
+            </form>
+        </div>
+    </div>
+@endsection
+----
+<1> ベースとなるレイアウトをロードする(?)
+<2> レイアウトのセクションにマッピングされる(?)
+<3> CSRF 対策用のトークンを埋め込む(?)
+<4> バリデーションエラーがある場合に表示
+<5> `@error('title') is-invalid @enderror` エラーの場合は is-invalid が有効となる。またエラーの場合は `old('title')` により送信時の値を再設定する
+<6> @error ディレクティブはエラーメッセージ変数 `$message` を提供する
+<7> エラーハンドリングの別な書き方
+
+== Test (UT, IT)
+
+テスト用ファイルを生成する。
+
+[source,bash]
+----
+php artisan make:test SubmitLinksTest
+----
+<1> `tests/Feature/SubmitLinksTest.php` を生成する。
+
+テストのサンプル。
+
+[source,php]
+----
+<?php
+
+namespace Tests\Feature;
+
+use Illuminate\Validation\ValidationException;
+use Tests\TestCase;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+
+class SubmitLinksTest extends TestCase
+{
+    use RefreshDatabase; // <1>
+
+    /** @test */
+    function guest_can_submit_a_new_link()
+    {
+        $response = $this->post('/submit', [ // <2>
+            'title' => 'Example Title',
+            'url' => 'http://example.com',
+            'description' => 'Example description.',
+        ]);
+
+        $this->assertDatabaseHas('links', [ // <3>
+            'title' => 'Example Title'
+        ]);
+
+        $response // <4>
+            ->assertStatus(302)
+            ->assertHeader('Location', url('/'));
+
+        $this // <5>
+            ->get('/')
+            ->assertSee('Example Title');
+    }
+}
+----
+<1> テストのたびにデータベースをリセットする旨の宣言
+<2> テストデータの POST リクエスト
+<3> データベースに登録されているか検証
+<4> レスポンスのステータスコードとヘッダーの検証
+<5> ホームページの html を取得し、期待値があることを検証
+
+テストの実行。
+
+[source,bash]
+----
+php artisan test
+
+# Or run phpunit directly
+vendor/bin/phpunit
+----
+<1> `tests/Feature/SubmitLinksTest.php` を生成する。
+
+=== テストのテクニック
+
+[source,php]
+----
+/** @test */
+function link_is_not_created_with_an_invalid_url()
+{
+    $this->withoutExceptionHandling(); // <1>
+
+    $cases = ['//invalid-url.com', '/invalid-url', 'foo.com'];
+
+    foreach ($cases as $case) {
+        try {
+            $response = $this->post('/submit', [
+                'title' => 'Example Title',
+                'url' => $case,
+                'description' => 'Example description',
+            ]);
+        } catch (ValidationException $e) { // <2>
+            $this->assertEquals(
+                'The url format is invalid.',
+                $e->validator->errors()->first('url')
+            );
+            continue;
+        }
+
+        $this->fail("The URL $case passed validation when it should have failed.");
+    }
+}
+----
+<1> 例外による HTTP レスポンス生成を抑止。これにより例外をそのまま検証できる
+<2> 実際にサーバーサイドで発生している例外をキャッチして検証
+
+== memo
+
+.A simple table with a title
+[cols="3a,1"]
+|===
+|Column heading 1 |Column heading 2
+
+|laradock による環境構築
+|2h
+
+|テーブル周りの実装
+
+* マイグレーションファイルの実装と実行
+* テストデータ用のファクトリーの実装
+* テストデータ用の seeder の実装
+* テストデータの投入
+|2h
+
+|ルーティングとビュー
+
+* ルーティングの実装
+* ビューの実装
+|1h
+
+|フォームの実装
+
+* ルーティングの実装
+* ビューの実装
+|1h
+
+|サーバーサイドバリデーション
+
+* バリデーションの実装
+* モデルの実装
+|1h
+
+|フォームのテスト
+
+* テストの実装
+* テストの実行
+|1h
+|===
