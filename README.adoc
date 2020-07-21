@@ -2,6 +2,39 @@
 
 * https://laravel-news.com/your-first-laravel-application[Laravel Tutorial: Step by Step Guide to Building Your First Laravel Application]
 
+== laradock(docker) を使ったスタートアップガイド
+
+* https://laravel-news.com/your-first-laravel-application[laradock - your-first-laravel-application]
+
+[source,bash]
+----
+sudo apt update -y
+sudo apt install -y php composer
+
+composer create-project --prefer-dist laravel/laravel links "7.*"
+
+git init
+git add .
+# 初期化したプロジェクトのソースを一式コミット
+git commit
+
+git submodule add https://github.com/Laradock/laradock.git
+cd laradock
+cp env-example .env
+# COMPOSE_PROJECT_NAME を変えて docker のコンテナ名がコンフリクトしないようにする
+vi .env
+
+cd ../
+# DATABASE の接続情報を laradock に合わせる
+vi .env
+
+docker-compose up -d nginx mysql phpmyadmin
+
+docker-compose exec workspace bash
+composer install
+php artisan key:generate
+----
+
 == プロジェクト作成
 
 [source,bash]
@@ -300,7 +333,6 @@ view の書き方をざっくり説明。
 ----
 php artisan make:test SubmitLinksTest
 ----
-<1> `tests/Feature/SubmitLinksTest.php` を生成する。
 
 テストのサンプル。
 
@@ -356,7 +388,6 @@ php artisan test
 # Or run phpunit directly
 vendor/bin/phpunit
 ----
-<1> `tests/Feature/SubmitLinksTest.php` を生成する。
 
 === テストのテクニック
 
@@ -398,13 +429,46 @@ dokcer 向けコマンド::
 --
 [source,bash]
 ----
-exec docker-compose up nginx mysql phpmyadmin // <1>
-exec docker-compose exec workspace php artisan test // <2>
-exec docker-compose exec workspace npm run watch // <3>
+# docker 起動
+exec docker-compose up nginx mysql phpmyadmin
+
+# テスト実行
+exec docker-compose exec workspace php artisan test
+
+# assets の監視起動
+exec docker-compose exec workspace npm run watch
 ----
-<1> docker 起動
-<2> テスト実行
-<3> assets の監視起動
+--
+
+よく使う(かもしれない) artisan コマンド::
++
+--
+[source,bash]
+----
+# migrate 用ファイルを生成する
+php artisan make:migration create_links_table --create=links
+
+# migrate する
+php artisan migrate
+
+# (denger!!!) all drop してから migrate する
+php artisan migrate:fresh
+
+# (denger!!!) all drop してから migrate して seed を埋め込む(テストデータをインサートする)
+php artisan migrate:fresh --seed
+
+# モデルとファクトリーの生成
+php artisan make:model --factory Link
+
+# xxx テーブル用の seeder 生成(テストデータ生成用ファイルの生成)
+php artisan make:seeder LinksTableSeeder
+
+# feature test (機能テスト) 用のファイルを生成
+php artisan make:test SubmitLinksTest
+
+# test の実行
+php artisan test
+----
 --
 
 .チュートリアルにかかった時間
