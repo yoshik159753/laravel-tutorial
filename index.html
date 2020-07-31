@@ -505,12 +505,23 @@ git commit
 git submodule add https://github.com/Laradock/laradock.git
 cd laradock
 cp env-example .env
+
+# default と異なるデータベースを作る場合は、 `laradock/mysql/docker-entrypoint-initdb.d/createdb.sql.example` の内容にしたがって `createdb.sql` を作る。
+# 初回の `docker-compose up` 前に初期化用ファイルを作成すること。
+# ただし、コンテナは共用されるためすでにコンテナが存在する場合にはコマンド実行で DB を作成する。(createdb.sql.example に記載あり)
+#
+# CREATE DATABASE IF NOT EXISTS `laraveltutorial` COLLATE 'utf8_general_ci' # ;
+# GRANT ALL ON `laraveltutorial`.* TO 'default'@'%' ;
+#
+# FLUSH PRIVILEGES ;
+
+
 # COMPOSE_PROJECT_NAME を変えて docker のコンテナ名がコンフリクトしないようにする
+# その他にはタイムゾーンやデフォルトの DB などを設定する
 vi .env
 
-cd ../
-# DATABASE の接続情報を laradock に合わせる
-vi .env
+# laravel 側の DATABASE の接続情報を laradock に合わせる
+vi ../.env
 
 docker-compose up -d nginx mysql phpmyadmin
 
@@ -548,30 +559,6 @@ composer create-project --prefer-dist laravel/laravel links "7.*"</code></pre>
 <div class="paragraph">
 <p><code>.env.example</code> をコピペして <code>.env</code> を作り、 DB の接続情報を設定する。
 なお <code>.env</code> の中身は本番/検証環境などで異なるため git の管理対象外とするべき。</p>
-</div>
-<div class="paragraph">
-<p>laradock を使って default と異なるデータベースを作る場合は、 <code>laradock/mysql/docker-entrypoint-initdb.d/createdb.sql.example</code> の内容にしたがって <code>createdb.sql</code> を作る。</p>
-</div>
-<div class="listingblock">
-<div class="title">sample</div>
-<div class="content">
-<pre class="highlight"><code class="language-sql" data-lang="sql">CREATE DATABASE IF NOT EXISTS `laraveltutorial` COLLATE 'utf8_general_ci' ;
-GRANT ALL ON `laraveltutorial`.* TO 'default'@'%' ;
-
-FLUSH PRIVILEGES ;</code></pre>
-</div>
-</div>
-<div class="admonitionblock note">
-<table>
-<tr>
-<td class="icon">
-<div class="title">Note</div>
-</td>
-<td class="content">
-初回の <code>docker-compose up</code> 前に初期化用ファイルを作成すること。
-</td>
-</tr>
-</table>
 </div>
 <div class="paragraph">
 <p>初回のデータベースへの接続確認は migrate コマンドを使うと良い。</p>
@@ -1466,7 +1453,7 @@ php artisan test</code></pre>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2020-07-21 11:45:40 +0900
+Last updated 2020-07-31 14:03:57 +0900
 </div>
 </div>
 </body>
