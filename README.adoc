@@ -124,6 +124,7 @@ php artisan migrate
 --
 [horizontal]
 `php artisan migrate`:: 通常の migrate 実行
+`php artisan migrate:status`:: migrate の状態を表示する
 `php artisan migrate:fresh`:: テーブルをすべてドロップしてから migrate
 `php artisan migrate:fresh --seed`:: テーブルをすべてドロップしてから migrate してテストデータを投入
 --
